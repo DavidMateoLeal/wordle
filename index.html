@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle 23 Cumpleaños</title>
+    <style>
+        /* Estilos CSS */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            color: #333;
+            margin: 0;
+        }
+        h1 {
+            color: #333;
+        }
+        .date {
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            color: #666;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 50px);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .row {
+            display: flex;
+            gap: 10px;
+            margin: 5px 0;
+        }
+        .cell {
+            border: 2px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            background-color: #fff;
+            text-transform: uppercase;
+        }
+        .correct {
+            background-color: #6aaa64; /* Verde */
+            color: white;
+            border-color: #6aaa64;
+        }
+        .present {
+            background-color: #c9b458; /* Amarillo */
+            color: white;
+            border-color: #c9b458;
+        }
+        .absent {
+            background-color: #787c7e; /* Gris */
+            color: white;
+            border-color: #787c7e;
+        }
+        #message {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #333;
+        }
+        .keyboard {
+            display: flex;
+            flex-wrap: wrap;
+            max-width: 350px;
+            gap: 5px;
+            margin-top: 20px;
+        }
+        .key {
+            width: 30px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            background-color: #ddd;
+            cursor: pointer;
+            border-radius: 5px;
+            user-select: none;
+        }
+        .key:hover {
+            background-color: #bbb;
+        }
+        .key.correct {
+            background-color: #6aaa64; /* Verde */
+            color: white;
+        }
+
+        .key.present {
+            background-color: #c9b458; /* Amarillo */
+            color: white;
+        }
+
+        .key.absent {
+            background-color: #787c7e; /* Gris oscuro */
+            color: white;
+            cursor: not-allowed; /* Desactivar la tecla */
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>WORDLE 23 CUMPLEAÑOS</h1>
+    <div class="date" id="date"></div>
+
+    <div id="grid">
+    </div>
+
+    <div class="keyboard" id="keyboard"></div>
+
+    <div id="message"></div>
+
+    <script>
+        // Arrays de palabras y fechas
+        const palabrasDiarias = ["lapicero", "balsamo", "esponja", "sudadera"];
+        const fechasDiarias = [
+            "07/11/2024", "08/11/2024", "09/11/2024", "10/11/2024",
+            "11/11/2024", "12/11/2024", "13/11/2024", "14/11/2024",
+            "15/11/2024", "16/11/2024", "17/11/2024", "18/11/2024",
+            "19/11/2024", "20/11/2024", "21/11/2024", "22/11/2024",
+            "23/11/2024", "24/11/2024", "25/11/2024", "26/11/2024",
+            "27/11/2024", "28/11/2024", "29/11/2024"
+        ];
+
+        // Obtener la fecha actual en formato dd/mm/yyyy
+        const hoy = new Date().toLocaleDateString("es-ES", {
+            day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+
+        // Encontrar la palabra del día según la fecha actual
+        const indicePalabra = fechasDiarias.indexOf(hoy);
+        const palabraSecreta = palabrasDiarias[indicePalabra] || "error"; // "error" si no hay palabra para hoy
+
+        const longitudPalabraDelDia = palabraSecreta.length;
+        
+        var grid = document.getElementById('grid');
+        var gridHtml = '';
+
+        for (let i = 0; i < 6; i++) {
+
+            gridHtml += `<div class="row">`;
+
+            for (let j = 0; j < longitudPalabraDelDia; j++) {
+                gridHtml += `
+                    <div style="width: ${300/longitudPalabraDelDia}px; height: ${300/longitudPalabraDelDia}px" class="cell" id="cell-${i}-${j}"></div>
+                `;
+                
+            }
+
+            gridHtml += `</div>`
+            
+        }
+
+        grid.innerHTML = gridHtml
+
+        // Configuración del juego
+        const intentosMaximos = 6;
+        let intentos = 0;
+        let intentoActual = '';
+
+        // Mostrar la fecha actual y longitud de la palabra del día
+        document.getElementById('date').innerText = hoy;
+
+        // Crear teclado virtual
+        const letras = "QWERTYUIOPASDFGHJKLÑZXCVBNM".split('');
+        const keyboardDiv = document.getElementById("keyboard");
+        letras.forEach(letra => {
+            const key = document.createElement("div");
+            key.className = "key";
+            key.setAttribute("data-key", letra.toUpperCase());
+            key.innerText = letra;
+            key.onclick = () => handleKeyPress(letra.toLowerCase());
+            keyboardDiv.appendChild(key);
+
+        });
+
+        // Botón de borrar
+        const backspaceKey = document.createElement("div");
+        backspaceKey.className = "key";
+        backspaceKey.style.width = "100px";
+        backspaceKey.innerText = "⌫";
+        backspaceKey.onclick = deleteLetra;
+        keyboardDiv.appendChild(backspaceKey);
+
+        // Botón de Enter
+        const enterKey = document.createElement("div");
+        enterKey.className = "key";
+        enterKey.style.width = "100%";
+        enterKey.innerText = "Enter";
+        enterKey.onclick = submitGuess;
+        keyboardDiv.appendChild(enterKey);
+
+        
+
+        function handleKeyPress(letra) {
+            if (intentoActual.length < longitudPalabraDelDia) {
+                intentoActual += letra;
+                updateGrid();
+            }
+        }
+
+        function updateGrid() {
+            for (let i = 0; i < longitudPalabraDelDia; i++) {
+                const cell = document.getElementById(`cell-${intentos}-${i}`);
+                cell.innerText = intentoActual[i] || '';
+            }
+        }
+
+        function submitGuess() {
+            if (intentoActual.length === longitudPalabraDelDia) {
+                checkGuess();
+                intentoActual = '';
+                intentos++;
+                if (intentos >= intentosMaximos && document.getElementById("message").innerText === "") {
+                    document.getElementById("message").innerText = `La palabra era "${palabraSecreta}". Mejor suerte la próxima vez.`;
+                }
+            }
+        }
+
+        function checkGuess() {
+            const secretArr = Array.from(palabraSecreta);
+            const guessArr = Array.from(intentoActual);
+            let marked = Array(longitudPalabraDelDia).fill(false);
+
+            for (let i = 0; i < longitudPalabraDelDia; i++) {
+                const cell = document.getElementById(`cell-${intentos}-${i}`);
+                if (guessArr[i] === secretArr[i]) {
+                    cell.classList.add("correct");
+                    marked[i] = true;
+                    secretArr[i] = null;
+                }
+            }
+
+            for (let i = 0; i < longitudPalabraDelDia; i++) {
+                const cell = document.getElementById(`cell-${intentos}-${i}`);
+                if (!cell.classList.contains("correct")) {
+                    if (secretArr.includes(guessArr[i])) {
+                        cell.classList.add("present");
+                        secretArr[secretArr.indexOf(guessArr[i])] = null;
+                    } else {
+                        cell.classList.add("absent");
+                    }
+                }
+            }
+
+            // Actualiza el teclado después de cada intento
+            updateKeyboard();
+
+            if (intentoActual === palabraSecreta) {
+                document.getElementById("message").innerText = "🎉 ¡Felicidades, encontraste la palabra! 🎉";
+                disableKeyboard();
+            }
+        }
+
+        function deleteLetra() {
+            if (intentoActual.length > 0) {
+                intentoActual = intentoActual.slice(0, -1);
+                updateGrid();
+            }
+        }
+
+        function disableKeyboard() {
+            const keys = document.querySelectorAll(".key");
+            keys.forEach(key => key.onclick = null);
+        }
+
+        function updateKeyboard() {
+            const keys = document.querySelectorAll(".key");
+            const guessArr = Array.from(intentoActual);
+            const secretArr = Array.from(palabraSecreta);
+
+            guessArr.forEach((letra, index) => {
+                const key = document.querySelector(`.key[data-key='${letra.toUpperCase()}']`);
+                const cell = document.getElementById(`cell-${intentos}-${index}`);
+
+                // Si la letra está correctamente colocada (verde)
+                if (cell.classList.contains("correct")) {
+                    key.classList.remove("present");
+                    key.classList.add("correct");
+                } 
+                // Si la letra está en la palabra pero en otro lugar (amarillo)
+                else if (cell.classList.contains("present")) {
+                    key.classList.add("present");
+                }
+                // Si la letra no está en la palabra y no ha sido marcada como correcta o presente (gris oscuro)
+                else if (!secretArr.includes(letra) && !key.classList.contains("absent")) {
+                    key.classList.add("absent");
+                    key.onclick = null; // Desactivar la letra
+                }
+            });
+        }
+
+        
+    </script>
+
+</body>
+</html>
