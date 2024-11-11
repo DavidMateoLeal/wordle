@@ -136,7 +136,7 @@
 
         // Encontrar la palabra del día según la fecha actual
         const indicePalabra = fechasDiarias.indexOf(hoy);
-        const palabraSecreta = palabrasDiarias[indicePalabra] || "error"; // "error" si no hay palabra para hoy
+        const palabraSecreta = palabrasDiarias[indicePalabra] || "wait"; // "error" si no hay palabra para hoy
 
         const longitudPalabraDelDia = palabraSecreta.length;
         
@@ -292,7 +292,7 @@
                 // Si la letra no está en la palabra y no ha sido marcada como correcta o presente (gris oscuro)
                 else if (!secretArr.includes(letra) && !key.classList.contains("absent")) {
                     key.classList.add("absent");
-                    key.onclick = null; // Desactivar la letra
+                    //key.onclick = null; // Desactivar la letra
                 }
             });
         }
